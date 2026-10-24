@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a2a3b">
+<title>باشگاه شکارچیان کلمات | تمرین حافظه</title>
+<style>
+  :root{
+    --navy:#173b4b;--teal:#167c80;--mint:#dff7eb;--gold:#ffc857;--coral:#ff8066;
+    --cream:#fffaf0;--ink:#21343c;--muted:#61737a;--white:#fff;--line:#dce8e7;
+    --shadow:0 12px 30px rgba(21,60,74,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:Tahoma,"Segoe UI",sans-serif;color:var(--ink);
+    min-height:100vh;background:#0a2a3b;overflow-x:hidden;
+  }
+  button,input{font:inherit}
+  button{cursor:pointer;touch-action:manipulation}
+  button:focus-visible,input:focus-visible{outline:3px solid #f5ae38;outline-offset:3px}
+
+  /* ===== Full-page 3D background canvas ===== */
+  #bg-canvas{
+    position:fixed;inset:0;width:100%;height:100%;
+    z-index:0;pointer-events:none;display:block;
+  }
+
+  /* Very light vignette — background remains clearly visible */
+  .bg-vignette{
+    position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%, rgba(0,20,30,0) 45%, rgba(0,18,26,.28) 100%);
+  }
+
+  .app{
+    position:relative;z-index:2;
+    width:100%;max-width:none;margin:0 auto;
+    padding:clamp(10px,2.5vw,22px);
+    min-height:100vh;display:flex;flex-direction:column;
+  }
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    margin-bottom:14px;background:rgba(255,255,255,.72);
+    border:1px solid rgba(255,255,255,.5);border-radius:20px;padding:10px 16px;
+    backdrop-filter:blur(14px);box-shadow:0 8px 24px rgba(0,30,40,.22);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:900;color:var(--navy)}
+  .brand-mark{
+    display:grid;place-items:center;width:44px;height:44px;border-radius:14px;
+    background:var(--navy);color:#fff;font-size:24px;box-shadow:var(--shadow);
+  }
+  .designer{font-size:13px;color:#2d4a52;text-align:left}
+  .designer strong{color:var(--navy)}
+
+  .screen{display:none;animation:enter .3s ease;flex:1;flex-direction:column}
+  .screen.active{display:flex}
+  @keyframes enter{from{opacity:.2;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  .panel{
+    background:rgba(255,255,255,.68);
+    border:1px solid rgba(255,255,255,.6);
+    border-radius:28px;padding:clamp(16px,3.5vw,30px);
+    box-shadow:0 20px 50px rgba(0,25,35,.28);
+    backdrop-filter:blur(14px);
+    flex:1;display:flex;flex-direction:column;justify-content:center;
+  }
+  #screen-game.active .panel{
+    background:rgba(255,255,255,.28);
+    border-color:rgba(255,255,255,.55);
+    box-shadow:none;backdrop-filter:blur(6px);
+    justify-content:flex-start;
+  }
+  #screen-typing.active .panel{
+    background:rgba(255,255,255,.55);
+    border-color:rgba(255,255,255,.7);
+  }
+  #screen-welcome.active .panel,
+  #screen-feedback.active .panel,
+  #screen-report.active .panel{background:rgba(255,255,255,.88)}
+
+  .hero{text-align:center;position:relative;overflow:hidden}
+  .illustration{font-size:clamp(52px,10vw,84px);margin:4px auto 10px;filter:drop-shadow(0 8px 5px #173b4b18)}
+  h1{font-size:clamp(25px,5vw,42px);line-height:1.5;color:var(--navy);margin:8px 0}
+  h2{font-size:clamp(21px,4vw,30px);color:var(--navy);margin:0 0 12px}
+  h3{margin:0 0 8px;color:var(--navy)}
+  p{line-height:1.9;margin:8px 0}
+  .subtitle{font-size:clamp(14px,2.4vw,18px);color:#3d555d;max-width:650px;margin:0 auto 22px}
+
+  input[type=text]{
+    width:100%;padding:15px 16px;border:2px solid var(--line);border-radius:14px;
+    background:#fff;color:var(--ink);min-height:52px;
+  }
+  .btn{
+    border:0;border-radius:14px;padding:13px 20px;font-weight:800;
+    transition:transform .15s,filter .15s;min-height:48px;
+  }
+  .btn:hover{filter:brightness(1.04);transform:translateY(-1px)}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--teal);color:#fff;box-shadow:0 6px 0 #0d6266}
+  .btn-gold{background:var(--gold);color:#493a16;box-shadow:0 5px 0 #e6a932}
+  .btn-light{background:rgba(237,246,244,.95);color:var(--navy);border:1px solid var(--line)}
+  .btn-coral{background:var(--coral);color:#fff;box-shadow:0 5px 0 #e46b53}
+  .btn-row{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .small-note{font-size:12px;color:var(--muted)}
+
+  .steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+  .step{
+    display:flex;gap:12px;align-items:flex-start;padding:15px;border-radius:16px;
+    background:rgba(245,250,248,.85);border:1px solid var(--line);
+  }
+  .step-icon{font-size:27px;flex-shrink:0}
+  .step p{font-size:14px;margin:3px 0}
+  .notice{
+    background:rgba(255,245,217,.9);border:1px solid #f4df9d;border-radius:14px;
+    padding:12px 15px;font-size:14px;line-height:1.9;
+  }
+
+  .stage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}
+  .stage-card{
+    border:1px solid var(--line);border-radius:20px;padding:20px;background:rgba(255,255,255,.92);
+    display:flex;flex-direction:column;gap:8px;min-width:0;position:relative;overflow:hidden;
+  }
+  .stage-card:before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:var(--card-color,var(--teal))}
+  .stage-number{
+    display:inline-grid;place-items:center;width:40px;height:40px;border-radius:13px;
+    background:var(--card-soft,#e0f5ec);font-size:22px;
+  }
+  .stage-card p{font-size:14px;color:var(--muted);margin:0}
+  .stage-card .btn{margin-top:auto}
+  .stage-card.done{background:rgba(240,251,244,.95)}
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;background:rgba(238,246,245,.95);
+    color:var(--navy);padding:7px 11px;border-radius:999px;font-size:12px;font-weight:800;
+  }
+
+  /* ===== GAME HEADER ===== */
+  .game-head{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;margin-bottom:14px;
+    background:rgba(255,255,255,.82);
+    border:1px solid rgba(255,255,255,.8);
+    border-radius:20px;padding:14px 16px;
+    backdrop-filter:blur(10px);
+    box-shadow:0 8px 24px rgba(0,25,35,.18);
+  }
+  .game-meta{display:flex;gap:8px;flex-wrap:wrap}
+  .timer-wrap{
+    background:rgba(240,247,245,.95);border-radius:18px;padding:12px 15px;
+    min-width:145px;text-align:center;border:1px solid var(--line);
+  }
+  .timer-label{font-size:12px;color:var(--muted)}
+  .timer{font-size:34px;line-height:1.35;font-weight:900;color:var(--teal);font-variant-numeric:tabular-nums}
+  .timer.urgent{color:#d64c3b}
+  .progress{height:8px;background:#dcebe7;border-radius:99px;overflow:hidden;margin-top:6px}
+  .progress-fill{height:100%;width:100%;background:linear-gradient(90deg,#21a77a,#ffc857);transition:width .2s linear}
+
+  .instruction{
+    text-align:center;font-size:clamp(16px,3vw,21px);font-weight:900;margin:10px 0 16px;
+    color:#062a33;
+    text-shadow:0 2px 0 rgba(255,255,255,.95),0 0 14px rgba(255,255,255,.9),0 0 30px rgba(255,255,255,.7);
+  }
+
+  /* ===== WORD GRID ===== */
+  .word-grid{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:18px;width:100%;max-width:1100px;margin:0 auto;
+    perspective:1200px;align-items:center;
+    padding:14px 6px 24px;overflow:visible;
+  }
+  .word-card{
+    position:relative;isolation:isolate;min-height:150px;
+    border:3px solid rgba(255,255,255,.95);
+    border-radius:26px;color:#0b2530;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    background:
+      radial-gradient(circle at 28% 20%,rgba(255,255,255,.98) 0 4%,transparent 18%),
+      linear-gradient(145deg,var(--sport-light,#b7fffa),var(--sport-main,#32e6dc) 48%,var(--sport-dark,#0e9eac));
+    box-shadow:
+      inset 0 5px 10px rgba(255,255,255,.85),
+      inset 0 -10px 16px rgba(0,40,70,.18),
+      0 14px 0 var(--sport-shadow,#087d8a),
+      0 22px 34px rgba(5,40,55,.40),
+      0 0 0 8px rgba(255,255,255,.14);
+    transform:translateZ(0) rotateX(4deg);
+    animation:gentleFloat 4.8s ease-in-out infinite;
+    overflow:hidden;
+    transition:transform .25s ease,box-shadow .25s ease;
+  }
+  .word-card::before{
+    content:"";position:absolute;inset:0;z-index:-1;opacity:.5;
+    background:
+      radial-gradient(ellipse at 18% 12%,rgba(255,255,255,.9),transparent 32%),
+      linear-gradient(120deg,transparent 35%,rgba(255,255,255,.22) 48%,transparent 60%);
+    pointer-events:none;
+  }
+  .word-card::after{
+    content:attr(data-sport);position:absolute;left:10px;bottom:5px;
+    font-size:clamp(26px,4.4vw,44px);opacity:.32;
+    filter:drop-shadow(0 2px 1px rgba(255,255,255,.6));pointer-events:none;
+  }
+  .word-card:nth-child(2n){animation-delay:-1.2s;transform:translateZ(0) rotateX(3deg) rotateY(-3deg)}
+  .word-card:nth-child(3n){animation-delay:-2.1s;transform:translateZ(0) rotateX(5deg) rotateY(3deg)}
+  .word-card:nth-child(4n){animation-delay:-.7s}
+  .word-card:hover{
+    transform:translateY(-6px) rotateX(0deg) scale(1.03);
+    box-shadow:inset 0 5px 10px rgba(255,255,255,.85),inset 0 -10px 16px rgba(0,40,70,.18),
+      0 14px 0 var(--sport-shadow,#087d8a),0 28px 38px rgba(5,40,55,.45),0 0 0 10px rgba(255,255,255,.18);
+  }
+  .word-card span.word-text{
+    position:relative;z-index:2;display:inline-block;
+    padding:10px 16px;border-radius:15px;
+    background:rgba(255,255,255,.9);
+    box-shadow:0 4px 10px rgba(20,55,65,.18);
+    font-size:clamp(21px,4.4vw,38px);font-weight:900;letter-spacing:.3px;
+    max-width:100%;overflow-wrap:anywhere;
+  }
+
+  .word-card.sport-football{
+    --sport-light:#e7ff91;--sport-main:#91ed4e;--sport-dark:#36b84e;--sport-shadow:#27843b;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 28% 18%,#fff 0 3%,transparent 16%),
+      radial-gradient(circle at 50% 50%,transparent 0 24%,rgba(255,255,255,.62) 25% 27%,transparent 28%),
+      linear-gradient(145deg,#efffa7,#85e64b 52%,#2ca94b);
+  }
+  .word-card.sport-basket{
+    --sport-light:#ffd69a;--sport-main:#ff9638;--sport-dark:#d94a1b;--sport-shadow:#a73719;
+    border-radius:50%;
+    background:
+      linear-gradient(90deg,transparent 46%,rgba(91,35,17,.45) 47% 50%,transparent 51%),
+      linear-gradient(0deg,transparent 46%,rgba(91,35,17,.45) 47% 50%,transparent 51%),
+      radial-gradient(circle at 28% 18%,#fff2d7 0 3%,transparent 16%),
+      linear-gradient(145deg,#ffc477,#f87525 55%,#c83d17);
+  }
+  .word-card.sport-tennis{
+    --sport-light:#f5ff9d;--sport-main:#c6f43e;--sport-dark:#7dbd12;--sport-shadow:#5c8c0c;
+    border-radius:50%;
+    background:radial-gradient(circle at 28% 18%,#fff 0 3%,transparent 16%),linear-gradient(145deg,#f4ff9e,#c6f43e 55%,#7bbf13);
+  }
+  .word-card.sport-volley{
+    --sport-light:#d5faff;--sport-main:#65dff3;--sport-dark:#178fcb;--sport-shadow:#126b9b;
+    border-radius:50%;
+    background:
+      radial-gradient(ellipse at 28% 18%,#fff 0 3%,transparent 16%),
+      conic-gradient(from 35deg,#a6f7ff 0 18%,#37b8ef 18% 34%,#f9ffff 34% 48%,#47d6f5 48% 67%,#d9fbff 67% 82%,#168dce 82% 100%);
+  }
+  .word-card.sport-racket{
+    --sport-light:#aaffef;--sport-main:#4de2c0;--sport-dark:#139b93;--sport-shadow:#08736f;
+    border-radius:32px 32px 24px 24px;
+    background:radial-gradient(circle at 28% 18%,#fff 0 3%,transparent 16%),
+      repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0 3px,transparent 3px 12px),
+      linear-gradient(145deg,#a8ffed,#4de2c0 52%,#139b93);
+  }
+  @keyframes gentleFloat{0%,100%{translate:0 0;rotate:0deg}50%{translate:0 -6px;rotate:.5deg}}
+
+  /* ===== TYPING SCREEN ===== */
+  .typing-wrap{
+    width:100%;max-width:720px;margin:0 auto;
+    background:rgba(255,255,255,.9);
+    border:2px solid rgba(255,255,255,.85);
+    border-radius:26px;padding:clamp(18px,3.5vw,32px);
+    box-shadow:0 22px 50px rgba(0,25,35,.30);
+    backdrop-filter:blur(14px);
+  }
+  .typing-title{
+    text-align:center;font-size:clamp(20px,3.6vw,28px);font-weight:900;color:var(--navy);
+    margin:0 0 6px;
+  }
+  .typing-sub{
+    text-align:center;color:#3d555d;font-size:clamp(13px,2.2vw,16px);
+    margin:0 0 20px;line-height:1.8;
+  }
+  .typing-fields{display:flex;flex-direction:column;gap:12px}
+  .typing-row{
+    display:flex;align-items:center;gap:10px;
+    background:#f5faf8;border:1px solid var(--line);border-radius:16px;
+    padding:8px 12px;
+  }
+  .typing-num{
+    flex-shrink:0;display:grid;place-items:center;
+    width:38px;height:38px;border-radius:12px;
+    background:var(--teal);color:#fff;font-weight:900;font-size:16px;
+    box-shadow:0 3px 0 #0d6266;
+  }
+  .typing-row input{
+    flex:1;min-width:0;border:2px solid transparent;background:#fff;
+    border-radius:11px;padding:11px 14px;font-size:clamp(17px,3vw,22px);
+    font-weight:800;color:var(--ink);text-align:right;min-height:48px;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .typing-row input:focus{
+    outline:none;border-color:var(--teal);
+    box-shadow:0 0 0 4px rgba(22,124,128,.18);
+  }
+  .typing-row.correct{background:#e8f9ee;border-color:#7fd6a0}
+  .typing-row.correct input{border-color:#4caf72;background:#f2fff7}
+  .typing-row.wrong{background:#fff0ee;border-color:#f0a89b}
+  .typing-row.wrong input{border-color:#e2604a;background:#fff5f3}
+  .typing-feedback{
+    flex-shrink:0;font-size:20px;width:26px;text-align:center;
+  }
+  .typing-hint{
+    font-size:13px;color:#4a636b;text-align:center;margin-top:16px;
+    background:rgba(255,245,217,.85);border:1px solid #f0dca3;
+    border-radius:12px;padding:10px 14px;line-height:1.8;
+  }
+
+  /* Recall / review blocks */
+  .recall-box{
+    text-align:center;padding:26px 18px;border-radius:22px;
+    background:rgba(255,255,255,.9);
+    border:2px dashed rgba(22,124,128,.5);
+    box-shadow:0 16px 40px rgba(0,25,35,.28);
+    backdrop-filter:blur(12px);
+    max-width:760px;margin:0 auto;
+  }
+  .recall-icon{font-size:58px}
+  .recall-box p{max-width:600px;margin:8px auto 0;color:#2b4750}
+  #watchControls{
+    background:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.8);
+    border-radius:18px;padding:8px 10px;backdrop-filter:blur(10px);
+    box-shadow:0 8px 22px rgba(0,25,35,.18);max-width:760px;margin:14px auto 0;
+  }
+
+  .result-words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px auto;max-width:650px}
+  .result-word{
+    background:#f2f8f6;border:1px solid var(--line);border-radius:14px;
+    padding:14px;font-size:clamp(17px,3vw,22px);font-weight:900;
+  }
+  .result-word span{color:var(--teal);font-size:13px;margin-left:8px}
+  .self-check{background:#fff8e7;border:1px solid #f2dfad;border-radius:16px;padding:16px;margin:18px 0;line-height:1.9}
+  .score-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0}
+  .score-box{text-align:center;padding:16px 8px;background:#f3f9f7;border-radius:16px;border:1px solid var(--line)}
+  .score-box strong{display:block;font-size:clamp(24px,5vw,32px);color:var(--teal)}
+  .score-box span{font-size:12px;color:var(--muted)}
+  .badges{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:20px 0}
+  .badge{background:#fff4d7;border:1px solid #f0dca3;border-radius:14px;padding:12px 15px;font-weight:800}
+  .hidden{display:none!important}
+  .footer{
+    font-size:12px;color:#d7ede9;text-align:center;padding:16px 8px;
+    text-shadow:0 1px 4px rgba(0,0,0,.5);
+  }
+  .toast{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+    background:var(--navy);color:#fff;padding:12px 18px;border-radius:14px;
+    box-shadow:var(--shadow);z-index:20;max-width:calc(100% - 24px);text-align:center;
+  }
+
+  /* Music toggle button */
+  .music-btn{
+    position:fixed;bottom:18px;right:18px;z-index:30;
+    width:52px;height:52px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.85);
+    background:rgba(23,59,75,.92);color:#fff;
+    font-size:22px;display:grid;place-items:center;
+    box-shadow:0 8px 22px rgba(0,20,30,.35);
+    backdrop-filter:blur(8px);
+    transition:transform .2s, background .2s;
+  }
+  .music-btn:hover{transform:scale(1.08);background:rgba(22,124,128,.95)}
+  .music-btn.playing{background:rgba(22,124,128,.95)}
+  .music-btn .wave{
+    display:none;
+  }
+  .music-btn.playing .wave{display:inline-block}
+  .music-btn.playing .mute-icon{display:none}
+
+  /* Welcome screen */
+  .app:has(#screen-welcome.active){width:100%;max-width:none;padding:0}
+  .app:has(#screen-welcome.active)>.topbar,
+  .app:has(#screen-welcome.active)>.footer{display:none}
+  .welcome-screen.active{display:grid;place-items:center;min-height:100vh;padding:24px}
+  .welcome-entry{
+    width:min(100%,410px);display:flex;flex-direction:column;align-items:stretch;gap:14px;
+    padding:clamp(20px,5vw,34px);border:1px solid rgba(224,255,255,.48);border-radius:30px;
+    background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(226,255,246,.9));
+    box-shadow:0 24px 65px rgba(0,0,0,.32),inset 0 2px 0 rgba(255,255,255,.95);
+    backdrop-filter:blur(8px);position:relative;
+  }
+  .name-orbit{
+    position:absolute;top:-15px;right:-11px;width:38px;height:38px;display:grid;place-items:center;
+    border-radius:13px;color:#123d4b;background:linear-gradient(145deg,#fff36e,#ff9f43);font-size:23px;
+    box-shadow:0 7px 0 rgba(126,73,15,.22),0 12px 20px rgba(0,0,0,.18);transform:rotate(12deg);
+  }
+  .welcome-entry input[type=text]{
+    border:2px solid #70d9c4;background:rgba(255,255,255,.96);border-radius:17px;min-height:60px;
+    text-align:center;font-size:clamp(17px,4vw,21px);font-weight:800;
+    box-shadow:inset 0 3px 7px rgba(9,78,78,.08),0 5px 0 rgba(22,124,128,.12);
+  }
+  .welcome-entry input[type=text]::placeholder{color:#648b8b;font-weight:600}
+  .welcome-entry .btn{
+    min-height:56px;border-radius:17px;
+    background:linear-gradient(135deg,#24d5b0,#078b91 65%,#1767a0);
+    box-shadow:0 7px 0 #075b67,0 13px 20px rgba(4,74,77,.2);font-size:17px;
+  }
+  .welcome-entry .btn span{display:inline-block;margin-right:7px;font-size:22px;vertical-align:-2px}
+
+  @media (max-width:760px){
+    .word-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .word-card{min-height:120px}
+  }
+  @media (max-width:620px){
+    .app{padding:10px}
+    .topbar{align-items:flex-start}
+    .designer{font-size:11px}
+    .steps,.stage-grid{grid-template-columns:1fr}
+    .word-card{min-height:104px;border-radius:20px}
+    .word-card.sport-football,.word-card.sport-basket,.word-card.sport-tennis,.word-card.sport-volley{border-radius:50%}
+    .word-card span.word-text{font-size:clamp(18px,5vw,26px);padding:8px 12px}
+    .game-head{align-items:stretch}
+    .timer-wrap{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:right}
+    .timer{font-size:27px}
+    .result-words{grid-template-columns:1fr 1fr}
+    .panel{border-radius:19px}
+    .game-head{padding:12px}
+    .typing-row input{font-size:16px;padding:10px 12px}
+    .music-btn{width:46px;height:46px;font-size:19px;bottom:14px;right:14px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  }
+</style>
+</head>
+<body>
+  <!-- Full-page 3D background -->
+  <canvas id="bg-canvas"></canvas>
+  <div class="bg-vignette" aria-hidden="true"></div>
+
+  <!-- Background music (hidden audio element) -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="https://s25.uupload.ir/files/fatemejashooya/بی%20کلام%20زنگ%20ورزش.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Music toggle -->
+  <button id="musicToggle" class="music-btn" aria-label="پخش/توقف موسیقی" title="پخش/توقف موسیقی">
+    <span class="mute-icon">🔇</span>
+    <span class="wave">🎵</span>
+  </button>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">🔎</div>
+        <div>باشگاه شکارچیان کلمات<div class="small-note">تمرین حافظه و املای فارسی</div></div>
+      </div>
+      <div class="designer">طراح آموزشی<br><strong>فاطمه جاشونیا</strong></div>
+    </header>
+
+    <main>
+      <!-- WELCOME -->
+      <section id="screen-welcome" class="screen active welcome-screen">
+        <div class="welcome-entry">
+          <div class="name-orbit" aria-hidden="true">✦</div>
+          <input id="studentName" type="text" maxlength="35" autocomplete="name" aria-label="نام دانش‌آموز" placeholder="نام زیبایت را بنویس...">
+          <button class="btn btn-primary" id="startWelcome">ورود به بازی <span aria-hidden="true">🚀</span></button>
+        </div>
+      </section>
+
+      <!-- GUIDE -->
+      <section id="screen-guide" class="screen">
+        <div class="panel">
+          <span class="pill">📋 راهنمای مأموریت</span>
+          <h2 style="margin-top:14px">قوانین شکارچی کلمات</h2>
+          <p id="helloStudent">سلام، مأمور عزیز!</p>
+          <div class="steps">
+            <div class="step"><div class="step-icon">👀</div><div><h3>۱. خوب نگاه کن</h3><p>کلمات را تا وقتی تایمر تمام نشده، به خاطر بسپار.</p></div></div>
+            <div class="step"><div class="step-icon">⌨️</div><div><h3>۲. تایپ کن</h3><p>بعد از ناپدید شدن کلمات، آن‌ها را در کادرها تایپ کن.</p></div></div>
+            <div class="step"><div class="step-icon">🔍</div><div><h3>۳. بررسی کن</h3><p>بازی پاسخ‌ها را بررسی می‌کند؛ ترتیب مهم نیست!</p></div></div>
+            <div class="step"><div class="step-icon">🏆</div><div><h3>۴. امتیاز بگیر</h3><p>هرچه کلمات بیشتری بنویسی، امتیاز بیشتری می‌گیری.</p></div></div>
+          </div>
+          <div class="notice">🔐 تا وقتی خودت دکمه‌ی بررسی را نزنی، پاسخ درست نمایش داده نمی‌شود. مهم نیست به چه ترتیبی بنویسی؛ فقط کلمات را درست تایپ کن!</div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="toStages">دیدن مرحله‌ها 🎮</button>
+            <button class="btn btn-light" data-go="welcome">بازگشت</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGES -->
+      <section id="screen-stages" class="screen">
+        <div class="panel">
+          <span class="pill">🗺️ نقشه‌ی مأموریت</span>
+          <h2 style="margin-top:14px">آماده‌ای، <span id="stageStudentName">مأمور</span>؟</h2>
+          <p class="subtitle" style="margin:0;text-align:right">از مرحله‌ی اول شروع کن. هر مرحله زمین ورزشی مخصوص خودش را دارد؛ کلمات روی همان زمین ظاهر می‌شوند و بعد باید آن‌ها را تایپ کنی.</p>
+          <div class="stage-grid" id="stageGrid"></div>
+          <div class="btn-row">
+            <button class="btn btn-light" data-go="guide">راهنمای بازی</button>
+            <button class="btn btn-gold" id="showReport">گزارش مأموریت 🏆</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME (memorize) -->
+      <section id="screen-game" class="screen">
+        <div class="panel">
+          <div class="game-head">
+            <div>
+              <span class="pill" id="gameStagePill">مرحله ۱</span>
+              <h2 id="gameTitle" style="margin:10px 0 5px">حافظه‌ی دوکلمه‌ای</h2>
+              <div class="game-meta">
+                <span class="pill" id="wordCountPill">۲ کلمه</span>
+                <span class="pill" id="levelPill">آسان</span>
+              </div>
+            </div>
+            <div class="timer-wrap" aria-live="polite">
+              <div>
+                <div class="timer-label" id="timerLabel">زمان باقی‌مانده</div>
+                <div class="timer" id="timer">۸</div>
+              </div>
+              <div style="flex:1;min-width:70px">
+                <div class="timer-label">پیشرفت زمان</div>
+                <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <p class="instruction" id="gameInstruction">کلمات را به خاطر بسپار!</p>
+
+          <div class="word-grid" id="wordGrid" aria-live="polite"></div>
+
+          <div id="watchControls" class="btn-row">
+            <button class="btn btn-gold" id="restartDisplay">از اول نمایش بده ↻</button>
+            <button class="btn btn-light" id="backToStages">بازگشت به مرحله‌ها</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TYPING SCREEN -->
+      <section id="screen-typing" class="screen">
+        <div class="panel" style="justify-content:flex-start">
+          <div class="typing-wrap">
+            <h2 class="typing-title">✏️ حالا کلمات را تایپ کن!</h2>
+            <p class="typing-sub" id="typingSub">کلماتی که دیدی را در کادرها بنویس. ترتیب مهم نیست!</p>
+            <div class="typing-fields" id="typingFields"></div>
+            <div class="typing-hint" id="typingHint">
+              💡 ترتیب نوشتن مهم نیست؛ فقط کلمات را درست تایپ کن. با زدن دکمه‌ی «بررسی» پاسخ‌ها ارزیابی می‌شوند.
+            </div>
+            <div class="btn-row" style="margin-top:20px">
+              <button class="btn btn-primary" id="submitTyping">بررسی پاسخ‌ها ✅</button>
+              <button class="btn btn-light" id="typingRetry">نمایش دوباره کلمات 🔁</button>
+              <button class="btn btn-light" id="typingBackStages">بازگشت به مرحله‌ها</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REVIEW -->
+      <section id="screen-review" class="screen">
+        <div class="panel">
+          <span class="pill">🔍 مرحله‌ی خودارزیابی</span>
+          <h2 style="margin-top:14px">بیا نوشته‌هایت را بررسی کنیم!</h2>
+          <p class="subtitle" style="margin:0;text-align:right">هر کلمه را با پاسخ درست مقایسه کن.</p>
+          <div id="reviewWords" class="result-words"></div>
+          <div class="self-check">✅ آیا همه‌ی کلمات را درست نوشتی؟ اگر اشتباهی داشتی، حالا با مداد رنگی آن را اصلاح کن.</div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="allCorrect">همه درست بود! 🌟</button>
+            <button class="btn btn-gold" id="hadMistakes">اشتباه داشتم؛ اصلاح کردم ✏️</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-light" id="repeatFromReview">تمرین دوباره</button>
+            <button class="btn btn-light" id="reviewBackStages">بازگشت به مرحله‌ها</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEEDBACK -->
+      <section id="screen-feedback" class="screen">
+        <div class="panel hero">
+          <div class="illustration" id="feedbackIcon">🌟</div>
+          <h1 id="feedbackTitle">آفرین، مأمور دقیق!</h1>
+          <p class="subtitle" id="feedbackText">تو یک قدم به قهرمان حافظه شدن نزدیک‌تر شدی.</p>
+          <div class="score-summary">
+            <div class="score-box"><strong id="feedbackPoints">۱۰</strong><span>امتیاز این مرحله</span></div>
+            <div class="score-box"><strong id="feedbackCompleted">۱</strong><span>مرحله‌ی تکمیل‌شده</span></div>
+            <div class="score-box"><strong id="feedbackTotal">۱۰</strong><span>مجموع امتیاز</span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="feedbackNext">ادامه‌ی مأموریت 🎯</button>
+            <button class="btn btn-light" id="feedbackStages">نقشه‌ی مرحله‌ها</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORT -->
+      <section id="screen-report" class="screen">
+        <div class="panel hero">
+          <div class="illustration">🏆</div>
+          <h1>گزارش مأموریت</h1>
+          <p class="subtitle" id="reportGreeting">گزارش قهرمان ما</p>
+          <div class="score-summary">
+            <div class="score-box"><strong id="reportStages">۰ از ۴</strong><span>مرحله‌های تکمیل‌شده</span></div>
+            <div class="score-box"><strong id="reportScore">۰</strong><span>مجموع امتیاز</span></div>
+            <div class="score-box"><strong id="reportPercent">۰٪</strong><span>پیشرفت مراحل</span></div>
+          </div>
+          <h3>نشان‌های افتخار تو</h3>
+          <div class="badges" id="reportBadges"></div>
+          <p id="reportMessage">هر بار تمرین، حافظه‌ات را قوی‌تر می‌کند!</p>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="reportContinue">ادامه‌ی بازی</button>
+            <button class="btn btn-gold" id="restartAll">شروع از اول 🔁</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">طراحی آموزشی: فاطمه جاشونیا · بازی آفلاین تمرین حافظه و املا</footer>
+  </div>
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <!-- ============ THREE.JS FULL-PAGE SPORTS BACKGROUNDS ============ -->
+  <script type="module">
+    import * as THREE from 'three';
+
+    const canvas = document.getElementById('bg-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 500);
+    camera.position.set(0, 6.5, 13);
+    camera.lookAt(0, 1, 0);
+
+    const clock = new THREE.Clock();
+    let currentScene = 'football';
+    let activeObjects = [];
+    let animatedBalls = [];
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const sun = new THREE.DirectionalLight(0xfff3dd, 1.45);
+    sun.position.set(9, 18, 8);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 60;
+    sun.shadow.camera.left = -20;
+    sun.shadow.camera.right = 20;
+    sun.shadow.camera.top = 20;
+    sun.shadow.camera.bottom = -20;
+    scene.add(sun);
+    const fill = new THREE.PointLight(0xaaddff, 0.55);
+    fill.position.set(-8, 10, 10);
+    scene.add(fill);
+
+    const skyUniforms = {
+      topColor:    { value: new THREE.Color(0x0b3a52) },
+      bottomColor: { value: new THREE.Color(0x2e8a86) },
+      offset:      { value: 15 },
+      exponent:    { value: 0.65 }
+    };
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(120, 32, 16),
+      new THREE.ShaderMaterial({
+        uniforms: skyUniforms,
+        vertexShader: `
+          varying vec3 vWorldPosition;
+          void main(){
+            vec4 wp = modelMatrix * vec4(position,1.0);
+            vWorldPosition = wp.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+          }`,
+        fragmentShader: `
+          uniform vec3 topColor; uniform vec3 bottomColor;
+          uniform float offset; uniform float exponent;
+          varying vec3 vWorldPosition;
+          void main(){
+            float h = normalize(vWorldPosition + offset).y;
+            gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h,0.0), exponent),0.0)), 1.0);
+          }`,
+        side: THREE.BackSide
+      })
+    );
+    scene.add(sky);
+
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(60, 80),
+      new THREE.MeshStandardMaterial({ color: 0x2d6e4a, roughness: .92, metalness: .03 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.5;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    function addToScene(obj) { scene.add(obj); activeObjects.push(obj); return obj; }
+
+    function makeBall(radius, color, roughness = 0.55, metalness = 0.05) {
+      const g = new THREE.SphereGeometry(radius, 32, 32);
+      const m = new THREE.MeshStandardMaterial({ color, roughness, metalness });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    function clearActive() {
+      activeObjects.forEach(o => {
+        scene.remove(o);
+        o.traverse?.(c => { c.geometry?.dispose?.(); if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(m => m.dispose?.()); });
+        o.geometry?.dispose?.();
+        if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose?.());
+      });
+      activeObjects = [];
+      animatedBalls = [];
+    }
+
+    function whiteLineMat(opacity = 0.55) {
+      return new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity, side: THREE.DoubleSide });
+    }
+
+    function buildFootball() {
+      skyUniforms.topColor.value.set(0x0b3a52);
+      skyUniforms.bottomColor.value.set(0x2e8a86);
+      ground.material.color.set(0x2f7a4d);
+
+      const outline = new THREE.Mesh(new THREE.PlaneGeometry(26, 18), whiteLineMat(0.32));
+      outline.rotation.x = -Math.PI / 2; outline.position.y = -0.47;
+      addToScene(outline);
+
+      const mid = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 18), whiteLineMat(0.68));
+      mid.rotation.x = -Math.PI / 2; mid.position.y = -0.46;
+      addToScene(mid);
+
+      const circle = new THREE.Mesh(new THREE.RingGeometry(3.4, 3.65, 72), whiteLineMat(0.68));
+      circle.rotation.x = -Math.PI / 2; circle.position.y = -0.46;
+      addToScene(circle);
+      const spot = new THREE.Mesh(new THREE.CircleGeometry(0.3, 24), whiteLineMat(0.8));
+      spot.rotation.x = -Math.PI / 2; spot.position.y = -0.46;
+      addToScene(spot);
+
+      [-1, 1].forEach(sgn => {
+        const box = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 8.5), whiteLineMat(0.55));
+        box.rotation.x = -Math.PI / 2;
+        box.position.set(sgn * 10.2, -0.455, 0);
+        addToScene(box);
+      });
+
+      [[-13, -9], [13, -9], [-13, 9], [13, 9]].forEach(([x, z]) => {
+        const arc = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.34, 40, 1, 0, Math.PI / 2), whiteLineMat(0.55));
+        arc.rotation.x = -Math.PI / 2; arc.position.set(x, -0.455, z);
+        addToScene(arc);
+      });
+
+      [-1, 1].forEach(sgn => {
+        const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .35, metalness: .1 });
+        const postGeo = new THREE.CylinderGeometry(0.11, 0.11, 3.4, 10);
+        const crossGeo = new THREE.CylinderGeometry(0.11, 0.11, 7.2, 10);
+        const gz = sgn * 8.6;
+        [-3.6, 3.6].forEach(x => {
+          const p = new THREE.Mesh(postGeo, postMat);
+          p.position.set(x, 1.2, gz); p.castShadow = true;
+          addToScene(p);
+        });
+        const bar = new THREE.Mesh(crossGeo, postMat);
+        bar.rotation.z = Math.PI / 2;
+        bar.position.set(0, 2.9, gz); bar.castShadow = true;
+        addToScene(bar);
+
+        const net = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 3.4), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14, side: THREE.DoubleSide }));
+        net.position.set(0, 1.2, gz + sgn * 0.6);
+        addToScene(net);
+      });
+
+      const ball = makeBall(1.05, 0xfafafa, 0.4, 0.05);
+      ball.position.set(3.5, 0.7, 3);
+      addToScene(ball);
+      animatedBalls.push({ mesh: ball, baseY: 0.7, speed: 1.8, amp: 0.18 });
+
+      const pentGeo = new THREE.CircleGeometry(0.3, 5);
+      const pentMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: .6 });
+      [[0, 1.05, .01], [.65, .55, .7], [-.65, .55, .7], [.75, -.4, .6], [-.75, -.4, .6], [0, -1.05, .01]].forEach(([x, y, z]) => {
+        const pent = new THREE.Mesh(pentGeo, pentMat);
+        pent.position.set(x, y, z); pent.lookAt(0, 0, 0);
+        ball.add(pent);
+      });
+
+      const b2 = makeBall(0.75, 0xfafafa);
+      b2.position.set(-5, 0.5, -2.5);
+      addToScene(b2);
+      animatedBalls.push({ mesh: b2, baseY: 0.5, speed: 1.3, amp: 0.12, phase: 1.5 });
+
+      const b3 = makeBall(0.6, 0xf5f5f5);
+      b3.position.set(-2, 0.4, 4.5);
+      addToScene(b3);
+      animatedBalls.push({ mesh: b3, baseY: 0.4, speed: 1.6, amp: 0.1, phase: 3 });
+    }
+
+    function buildBasketball() {
+      skyUniforms.topColor.value.set(0x3a1f12);
+      skyUniforms.bottomColor.value.set(0xc07a3f);
+      ground.material.color.set(0xb8722f);
+
+      const outline = new THREE.Mesh(new THREE.PlaneGeometry(24, 17), whiteLineMat(0.28));
+      outline.rotation.x = -Math.PI / 2; outline.position.y = -0.47;
+      addToScene(outline);
+
+      const mid = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 17), whiteLineMat(0.68));
+      mid.rotation.x = -Math.PI / 2; mid.position.y = -0.46;
+      addToScene(mid);
+
+      const circle = new THREE.Mesh(new THREE.RingGeometry(2.6, 2.85, 64), whiteLineMat(0.68));
+      circle.rotation.x = -Math.PI / 2; circle.position.y = -0.46;
+      addToScene(circle);
+
+      [-1, 1].forEach(sgn => {
+        const key = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 4.6), whiteLineMat(0.55));
+        key.rotation.x = -Math.PI / 2;
+        key.position.set(0, -0.455, sgn * 5.2);
+        addToScene(key);
+      });
+
+      [-1, 1].forEach(sgn => {
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x777777, roughness: .4, metalness: .65 });
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 4.6, 10), poleMat);
+        pole.position.set(0, 1.8, sgn * 8.6); pole.castShadow = true;
+        addToScene(pole);
+
+        const backboard = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 1.4, 0.12),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .3 })
+        );
+        backboard.position.set(0, 3.6, sgn * 8.6);
+        backboard.castShadow = true;
+        addToScene(backboard);
+
+        const rim = new THREE.Mesh(
+          new THREE.TorusGeometry(0.6, 0.075, 12, 32),
+          new THREE.MeshStandardMaterial({ color: 0xff4d1f, roughness: .35, metalness: .55 })
+        );
+        rim.rotation.x = Math.PI / 2;
+        rim.position.set(0, 3.55, sgn * (8.6 - 0.55));
+        rim.castShadow = true;
+        addToScene(rim);
+      });
+
+      const ball = makeBall(1.05, 0xd46b23, 0.72);
+      ball.position.set(3, 0.8, 2);
+      addToScene(ball);
+      animatedBalls.push({ mesh: ball, baseY: 0.8, speed: 1.7, amp: 0.22 });
+
+      const lineMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: .6 });
+      const t1 = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.03, 8, 40), lineMat);
+      const t2 = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.03, 8, 40), lineMat);
+      t2.rotation.y = Math.PI / 2;
+      const t3 = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.03, 8, 40), lineMat);
+      t3.rotation.x = Math.PI / 2;
+      ball.add(t1, t2, t3);
+
+      const b2 = makeBall(0.8, 0xcc6a24);
+      b2.position.set(-4, 0.6, -3.5);
+      addToScene(b2);
+      animatedBalls.push({ mesh: b2, baseY: 0.6, speed: 1.4, amp: 0.14, phase: 2 });
+    }
+
+    function buildVolleyball() {
+      skyUniforms.topColor.value.set(0x0a3350);
+      skyUniforms.bottomColor.value.set(0x2c7fa8);
+      ground.material.color.set(0x2f6c8a);
+
+      const outline = new THREE.Mesh(new THREE.PlaneGeometry(22, 20), whiteLineMat(0.34));
+      outline.rotation.x = -Math.PI / 2; outline.position.y = -0.47;
+      addToScene(outline);
+
+      [-1, 1].forEach(sgn => {
+        const line = new THREE.Mesh(new THREE.PlaneGeometry(22, 0.18), whiteLineMat(0.6));
+        line.rotation.x = -Math.PI / 2;
+        line.position.set(0, -0.455, sgn * 3.6);
+        addToScene(line);
+      });
+
+      const net = new THREE.Mesh(
+        new THREE.PlaneGeometry(16, 2.2),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.26, side: THREE.DoubleSide })
+      );
+      net.position.set(0, 1.7, 0);
+      addToScene(net);
+
+      for (let i = 0; i < 7; i++) {
+        const strand = new THREE.Mesh(new THREE.PlaneGeometry(16, 0.05), whiteLineMat(0.4));
+        strand.position.set(0, 0.65 + i * 0.31, 0);
+        addToScene(strand);
+      }
+
+      [-1, 1].forEach(sgn => {
+        const pole = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.09, 0.11, 3.6, 10),
+          new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: .3, metalness: .5 })
+        );
+        pole.position.set(sgn * 8, 1.4, 0);
+        pole.castShadow = true;
+        addToScene(pole);
+      });
+
+      const ball = makeBall(1.05, 0xf7f7f7, 0.6);
+      ball.position.set(2.5, 1.2, 3);
+      addToScene(ball);
+      animatedBalls.push({ mesh: ball, baseY: 1.2, speed: 1.9, amp: 0.25 });
+
+      const panelColors = [0x1e88e5, 0xffc107, 0xe53935];
+      panelColors.forEach((c, i) => {
+        const panel = new THREE.Mesh(
+          new THREE.SphereGeometry(1.06, 32, 32, i * (Math.PI * 2 / 3), Math.PI * 2 / 3, 0, Math.PI / 2),
+          new THREE.MeshStandardMaterial({ color: c, roughness: .62 })
+        );
+        ball.add(panel);
+      });
+
+      const b2 = makeBall(0.78, 0xf2f2f2);
+      b2.position.set(-4.5, 0.8, -3);
+      addToScene(b2);
+      animatedBalls.push({ mesh: b2, baseY: 0.8, speed: 1.35, amp: 0.14, phase: 1.2 });
+    }
+
+    function buildPool() {
+      skyUniforms.topColor.value.set(0x06304a);
+      skyUniforms.bottomColor.value.set(0x1c9bc4);
+      ground.material.color.set(0x0f5d7a);
+
+      const deck = new THREE.Mesh(
+        new THREE.PlaneGeometry(34, 26),
+        new THREE.MeshStandardMaterial({ color: 0xdad2c4, roughness: .9 })
+      );
+      deck.rotation.x = -Math.PI / 2;
+      deck.position.y = -0.48;
+      deck.receiveShadow = true;
+      addToScene(deck);
+
+      const water = new THREE.Mesh(
+        new THREE.PlaneGeometry(26, 18),
+        new THREE.MeshStandardMaterial({
+          color: 0x1a9bd1, transparent: true, opacity: 0.88,
+          roughness: 0.08, metalness: 0.55
+        })
+      );
+      water.rotation.x = -Math.PI / 2;
+      water.position.y = -0.42;
+      water.receiveShadow = true;
+      addToScene(water);
+
+      for (let i = -2; i <= 2; i++) {
+        const lane = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.35, 18),
+          new THREE.MeshStandardMaterial({ color: 0x0b3f5c, roughness: .4, metalness: .3 })
+        );
+        lane.rotation.x = -Math.PI / 2;
+        lane.position.set(i * 4.4, -0.41, 0);
+        addToScene(lane);
+      }
+
+      [-1, 1].forEach(sgn => {
+        for (let j = 0; j < 12; j++) {
+          const float = new THREE.Mesh(
+            new THREE.SphereGeometry(0.26, 10, 10),
+            new THREE.MeshStandardMaterial({ color: j % 2 === 0 ? 0xff4d4d : 0x4da6ff, roughness: .5 })
+          );
+          float.position.set(sgn * 6.8, -0.15, -8.2 + j * 1.5);
+          float.castShadow = true;
+          addToScene(float);
+        }
+      });
+
+      const ball = makeBall(0.95, 0xffcc00, 0.5);
+      ball.position.set(0.5, 0.55, 2);
+      addToScene(ball);
+      animatedBalls.push({ mesh: ball, baseY: 0.55, speed: 2.1, amp: 0.2 });
+
+      const stripeMat = new THREE.MeshStandardMaterial({ color: 0x0066cc, roughness: .5 });
+      for (let i = 0; i < 3; i++) {
+        const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.035, 8, 40), stripeMat);
+        stripe.rotation.y = (i * Math.PI) / 3;
+        ball.add(stripe);
+      }
+
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.8, 0.22, 16, 32),
+        new THREE.MeshStandardMaterial({ color: 0xff7a45, roughness: .6 })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(-5, 0.05, 4);
+      ring.castShadow = true;
+      addToScene(ring);
+
+      const ball2 = makeBall(0.7, 0xffffff);
+      ball2.position.set(4.5, 0.4, -3);
+      addToScene(ball2);
+      animatedBalls.push({ mesh: ball2, baseY: 0.4, speed: 1.5, amp: 0.12, phase: 2.4 });
+    }
+
+    const builders = {
+      football: buildFootball,
+      basketball: buildBasketball,
+      volleyball: buildVolleyball,
+      pool: buildPool
+    };
+
+    function switchBackground(type) {
+      if (!builders[type] || (currentScene === type && activeObjects.length)) return;
+      currentScene = type;
+      clearActive();
+      builders[type]();
+    }
+    window.__switchBg = switchBackground;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      camera.position.x = Math.sin(t * 0.09) * 1.1;
+      camera.position.y = 6.5 + Math.sin(t * 0.14) * 0.35;
+      camera.lookAt(0, 1.3, 0);
+
+      animatedBalls.forEach(b => {
+        b.mesh.position.y = b.baseY + Math.sin(t * b.speed + (b.phase || 0)) * b.amp;
+        b.mesh.rotation.y = t * 0.4;
+        b.mesh.rotation.x = Math.sin(t * 0.5) * 0.15;
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    buildFootball();
+    animate();
+  </script>
+
+  <!-- ============ GAME LOGIC ============ -->
+  <script>
+    "use strict";
+
+    const WORD_BANK = {
+      easy: ["ورزش", "زمین", "کلاس", "سالن", "کفش", "لباس", "شنا", "روز", "شب", "باران", "مداد", "دوست", "کتاب", "بازی", "توپ"],
+      medium: ["تعطیلی", "علاقه", "مناسب", "تصمیم", "تمرین", "مسابقات", "فرزندان", "مخصوص", "پاییزی", "گفت‌وگو", "مدرسه", "تندرسی", "همراه", "شادمانی"],
+      hard: ["حرفه‌ای", "ماهرانه", "نام‌نویسی", "راهنمایی", "پیوسته", "جلب", "جنب‌وجوش", "نرم‌نرمک", "پیشرفت", "مسئولیت", "همکاری", "توانایی"]
+    };
+
+    const STAGES = [
+      { id: 1, title: "حافظه‌ی دوکلمه‌ای",  count: 2, seconds: 8,  level: "آسان",           badge: "🥢 شکارچی دو کلمه", mix: ["easy"],                  bg: "football"   },
+      { id: 2, title: "حافظه‌ی سه‌کلمه‌ای",  count: 3, seconds: 11, level: "آسان تا متوسط",  badge: "🔵 استاد حافظه",    mix: ["easy", "medium"],        bg: "basketball" },
+      { id: 3, title: "حافظه‌ی چهارکلمه‌ای", count: 4, seconds: 14, level: "متوسط تا دشوار", badge: "🏀 کارآگاه کلمات",  mix: ["easy", "medium", "hard"], bg: "volleyball" },
+      { id: 4, title: "چالش نهایی پنج‌کلمه‌ای", count: 5, seconds: 18, level: "دشوار",         badge: "🏆 قهرمان حافظه",   mix: ["medium", "hard"],        bg: "pool"       }
+    ];
+
+    const state = {
+      name: "", currentStage: 0, words: [], completed: {},
+      points: 0, stagePoints: {}, timerId: null, startedAt: 0,
+      duration: 0, remaining: 0, toastId: null,
+      typedAnswers: [],
+      checkResults: []
+    };
+
+    const $ = id => document.getElementById(id);
+
+    /* ============================================================
+       BACKGROUND MUSIC
+       ============================================================ */
+    const music = $("bg-music");
+    const musicBtn = $("musicToggle");
+    let musicStarted = false;
+
+    function startMusicOnce() {
+      if (musicStarted) return;
+      musicStarted = true;
+      music.volume = 0.45;
+      const p = music.play();
+      if (p && p.catch) p.catch(() => { /* autoplay blocked until user gesture */ });
+    }
+
+    // Try to play after any user interaction
+    ["click", "keydown", "touchstart", "pointerdown"].forEach(evt => {
+      document.addEventListener(evt, () => {
+        if (!musicStarted) startMusicOnce();
+      }, { once: true, passive: true });
+    });
+
+    musicBtn.addEventListener("click", () => {
+      if (music.paused) {
+        musicStarted = true;
+        music.volume = 0.45;
+        music.play().then(() => {
+          musicBtn.classList.add("playing");
+          musicBtn.setAttribute("aria-label", "توقف موسیقی");
+        }).catch(() => {});
+      } else {
+        music.pause();
+        musicBtn.classList.remove("playing");
+        musicBtn.setAttribute("aria-label", "پخش موسیقی");
+      }
+    });
+
+    // Update button state
+    music.addEventListener("play", () => {
+      musicBtn.classList.add("playing");
+      musicBtn.setAttribute("aria-label", "توقف موسیقی");
+    });
+    music.addEventListener("pause", () => {
+      musicBtn.classList.remove("playing");
+      musicBtn.setAttribute("aria-label", "پخش موسیقی");
+    });
+
+    function showScreen(name) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      $("screen-" + name).classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    function stopTimer() {
+      if (state.timerId !== null) { clearInterval(state.timerId); state.timerId = null; }
+    }
+    function notify(msg) {
+      const t = $("toast"); t.textContent = msg; t.classList.remove("hidden");
+      clearTimeout(state.toastId);
+      state.toastId = setTimeout(() => t.classList.add("hidden"), 2400);
+    }
+    function faNum(n) { return String(n).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]); }
+
+    function normalizeFa(s) {
+      return String(s || "")
+        .replace(/[\u064A\u0649]/g, "ی")
+        .replace(/\u0643/g, "ک")
+        .replace(/[\u200C\u200D\u200E\u200F\uFEFF]/g, "")
+        .replace(/[\u0622\u0623\u0625]/g, "ا")
+        .replace(/\u0629/g, "ه")
+        .replace(/[\u064B-\u0652\u0670]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    function wordsMatch(a, b) { return normalizeFa(a) === normalizeFa(b); }
+
+    function sportClassFor(stageId, i) {
+      const themes = {
+        1: ["sport-football", "sport-basket"],
+        2: ["sport-tennis", "sport-volley", "sport-football"],
+        3: ["sport-basket", "sport-racket", "sport-tennis", "sport-volley"],
+        4: ["sport-football", "sport-basket", "sport-volley", "sport-tennis", "sport-racket"]
+      };
+      const arr = themes[stageId] || themes[1];
+      return arr[i % arr.length];
+    }
+    function sportEmojiFor(stageId, i) {
+      const themes = {
+        1: ["⚽", "🏀"],
+        2: ["🎾", "🏐", "⚽"],
+        3: ["🏀", "🏸", "🎾", "🏐"],
+        4: ["⚽", "🏀", "🏐", "🎾", "🏸"]
+      };
+      const arr = themes[stageId] || themes[1];
+      return arr[i % arr.length];
+    }
+
+    function chooseWords(stage) {
+      const pool = [];
+      stage.mix.forEach(g => WORD_BANK[g].forEach(w => pool.push(w)));
+      const unique = [...new Set(pool)];
+      let chosen = [];
+      for (let a = 0; a < 8; a++) {
+        const sh = [...unique].sort(() => Math.random() - .5);
+        chosen = sh.slice(0, stage.count);
+        if (chosen.join("|") !== state.words.join("|")) break;
+      }
+      return chosen;
+    }
+
+    function buildStageCards() {
+      const grid = $("stageGrid"); grid.innerHTML = "";
+      STAGES.forEach((s, i) => {
+        const done = !!state.completed[s.id];
+        const colors = [
+          ["#167c80", "#dff7eb"], ["#3979bd", "#e3efff"],
+          ["#8958b0", "#f0e5ff"], ["#d77a36", "#fff0d9"]
+        ][i];
+        const card = document.createElement("article");
+        card.className = "stage-card" + (done ? " done" : "");
+        card.style.setProperty("--card-color", colors[0]);
+        card.style.setProperty("--card-soft", colors[1]);
+        const bgNames = { football: "زمین فوتبال ⚽", basketball: "زمین بسکتبال 🏀", volleyball: "زمین والیبال 🏐", pool: "استخر شنا 🏊" };
+        card.innerHTML = `
+          <div class="stage-number">${["🥢","🔵","🏀","🏆"][i]}</div>
+          <h3>مرحله ${faNum(s.id)}: ${s.title}</h3>
+          <p>${faNum(s.count)} کلمه · ${faNum(s.seconds)} ثانیه نمایش</p>
+          <p>سطح: ${s.level}</p>
+          <p>پس‌زمینه: ${bgNames[s.bg]}</p>
+          <p>${done ? "✅ تکمیل شده · " + faNum(state.stagePoints[s.id] || 0) + " امتیاز" : "🎯 آماده‌ی شروع"}</p>
+          <button class="btn ${done ? "btn-gold" : "btn-primary"}" data-stage="${s.id}">${done ? "تمرین دوباره" : "شروع مرحله"}</button>
+        `;
+        grid.appendChild(card);
+      });
+      grid.querySelectorAll("[data-stage]").forEach(btn =>
+        btn.addEventListener("click", () => startStage(Number(btn.dataset.stage)))
+      );
+      $("stageStudentName").textContent = state.name || "مأمور";
+    }
+
+    function startStage(id) {
+      stopTimer();
+      const stage = STAGES.find(s => s.id === id);
+      if (!stage) return;
+
+      window.__switchBg && window.__switchBg(stage.bg);
+
+      state.currentStage = id;
+      state.words = chooseWords(stage);
+      state.typedAnswers = new Array(state.words.length).fill("");
+      state.checkResults = [];
+
+      $("gameStagePill").textContent = "مرحله " + faNum(id);
+      $("gameTitle").textContent = stage.title;
+      $("wordCountPill").textContent = faNum(stage.count) + " کلمه";
+      $("levelPill").textContent = stage.level;
+      $("timerLabel").textContent = "زمان باقی‌مانده";
+      $("gameInstruction").textContent = "کلمات را با دقت نگاه کن و به خاطر بسپار!";
+
+      $("watchControls").classList.remove("hidden");
+      $("wordGrid").classList.remove("hidden");
+      $("wordGrid").innerHTML = "";
+
+      state.words.forEach((word, i) => {
+        const card = document.createElement("div");
+        card.className = "word-card " + sportClassFor(id, i);
+        card.dataset.sport = sportEmojiFor(id, i);
+        const text = document.createElement("span");
+        text.className = "word-text";
+        text.textContent = word;
+        card.appendChild(text);
+        card.setAttribute("aria-label", "کلمه شماره " + faNum(i + 1));
+        $("wordGrid").appendChild(card);
+      });
+
+      showScreen("game");
+      runDisplayTimer(stage.seconds);
+    }
+
+    function runDisplayTimer(seconds) {
+      stopTimer();
+      state.duration = seconds; state.remaining = seconds; state.startedAt = Date.now();
+      $("timer").textContent = faNum(seconds);
+      $("timer").classList.remove("urgent");
+      $("progressFill").style.width = "100%";
+      state.timerId = setInterval(() => {
+        const elapsed = (Date.now() - state.startedAt) / 1000;
+        const remaining = Math.max(0, state.duration - elapsed);
+        state.remaining = remaining;
+        $("timer").textContent = faNum(Math.ceil(remaining));
+        $("progressFill").style.width = (remaining / state.duration * 100) + "%";
+        if (remaining <= 3) $("timer").classList.add("urgent");
+        if (remaining <= 0) { stopTimer(); hideWordsAndGoToTyping(); }
+      }, 100);
+    }
+
+    function hideWordsAndGoToTyping() {
+      stopTimer();
+      $("wordGrid").innerHTML = "";
+      $("wordGrid").classList.add("hidden");
+      $("timer").textContent = "۰";
+      $("progressFill").style.width = "0%";
+      $("watchControls").classList.add("hidden");
+      buildTypingScreen();
+      showScreen("typing");
+    }
+
+    function restartDisplay() {
+      const stage = STAGES.find(s => s.id === state.currentStage);
+      if (!stage) return;
+      stopTimer();
+      $("wordGrid").innerHTML = "";
+      state.words.forEach((word, i) => {
+        const card = document.createElement("div");
+        card.className = "word-card " + sportClassFor(state.currentStage, i);
+        card.dataset.sport = sportEmojiFor(state.currentStage, i);
+        const text = document.createElement("span");
+        text.className = "word-text";
+        text.textContent = word;
+        card.appendChild(text);
+        card.setAttribute("aria-label", "کلمه شماره " + faNum(i + 1));
+        $("wordGrid").appendChild(card);
+      });
+      $("wordGrid").classList.remove("hidden");
+      $("watchControls").classList.remove("hidden");
+      $("gameInstruction").textContent = "دوباره با دقت نگاه کن و کلمات را به خاطر بسپار!";
+      runDisplayTimer(stage.seconds);
+    }
+
+    /* ============================================================
+       TYPING — ORDER-INDEPENDENT CHECK
+       ============================================================ */
+    function buildTypingScreen() {
+      const stage = STAGES.find(s => s.id === state.currentStage);
+      $("typingSub").textContent =
+        "کلماتی که دیدی (" + faNum(stage.count) + " کلمه) را در کادرها بنویس. ترتیب مهم نیست!";
+      $("typingHint").textContent =
+        "💡 می‌توانی کلمات را به هر ترتیبی بنویسی. با زدن دکمه‌ی «بررسی» پاسخ‌ها ارزیابی می‌شوند.";
+
+      const fields = $("typingFields");
+      fields.innerHTML = "";
+
+      // Inputs count = number of words (order doesn't matter, but slots are shown)
+      state.words.forEach((word, i) => {
+        const row = document.createElement("div");
+        row.className = "typing-row";
+        row.dataset.index = i;
+
+        const num = document.createElement("div");
+        num.className = "typing-num";
+        num.textContent = faNum(i + 1);
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = "typing-input-" + i;
+        input.dataset.index = i;
+        input.setAttribute("autocomplete", "off");
+        input.setAttribute("autocapitalize", "off");
+        input.setAttribute("spellcheck", "false");
+        input.dir = "rtl";
+        input.placeholder = "یکی از کلمات را بنویس...";
+        input.value = state.typedAnswers[i] || "";
+
+        const fb = document.createElement("div");
+        fb.className = "typing-feedback";
+        fb.id = "typing-fb-" + i;
+
+        row.appendChild(num);
+        row.appendChild(input);
+        row.appendChild(fb);
+        fields.appendChild(row);
+
+        input.addEventListener("input", (e) => {
+          state.typedAnswers[i] = e.target.value;
+          row.classList.remove("correct", "wrong");
+          fb.textContent = "";
+        });
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (i < state.words.length - 1) {
+              $("typing-input-" + (i + 1)).focus();
+            } else {
+              submitTyping();
+            }
+          }
+        });
+      });
+
+      setTimeout(() => {
+        const first = $("typing-input-0");
+        if (first) first.focus();
+      }, 250);
+    }
+
+    function submitTyping() {
+      // Capture current values
+      state.words.forEach((_, i) => {
+        const inp = $("typing-input-" + i);
+        if (inp) state.typedAnswers[i] = inp.value;
+      });
+
+      // Collect all typed answers (non-empty)
+      const typedRaw = state.typedAnswers.map(v => String(v || "").trim());
+      const typedNonEmpty = typedRaw.filter(v => v.length > 0);
+
+      // Build a working copy of the expected words for order-independent matching
+      const remainingExpected = [...state.words];
+      const typedResults = []; // per typed answer: true if matched to some expected word
+
+      typedNonEmpty.forEach(ans => {
+        const idx = remainingExpected.findIndex(w => wordsMatch(ans, w));
+        if (idx !== -1) {
+          remainingExpected.splice(idx, 1);
+          typedResults.push(true);
+        } else {
+          typedResults.push(false);
+        }
+      });
+
+      const correctCount = typedResults.filter(Boolean).length;
+      const total = state.words.length;
+
+      // Map feedback back to the actual input rows (in typed order)
+      let resultPtr = 0;
+      state.words.forEach((_, i) => {
+        const row = $("typingFields").querySelector('.typing-row[data-index="' + i + '"]');
+        const fb = $("typing-fb-" + i);
+        if (!row) return;
+
+        const raw = typedRaw[i];
+        row.classList.remove("correct", "wrong");
+
+        if (raw.length === 0) {
+          if (fb) fb.textContent = "";
+          return;
+        }
+
+        // typedNonEmpty order matches non-empty rows in index order
+        while (resultPtr < typedResults.length && typedRaw.indexOf(raw) === -1) {
+          resultPtr++;
+        }
+        // safer: recompute per-row correctness by checking membership against original set
+        // (a typed answer is correct if it matches ANY word in the expected set)
+        const isMatch = state.words.some(w => wordsMatch(raw, w));
+
+        if (isMatch) {
+          row.classList.add("correct");
+          if (fb) fb.textContent = "✅";
+        } else {
+          row.classList.add("wrong");
+          if (fb) fb.textContent = "❌";
+        }
+      });
+
+      // Determine overall correctness: all words found at least once (order-independent)
+      const foundAll = correctCount === total && typedNonEmpty.length >= total;
+      const uniqueMatched = new Set();
+      typedNonEmpty.forEach(ans => {
+        const match = state.words.find(w => wordsMatch(ans, w));
+        if (match) uniqueMatched.add(match);
+      });
+      const allWordsMatched = uniqueMatched.size === total;
+
+      if (allWordsMatched) {
+        $("typingHint").textContent = "🎉 آفرین! همه‌ی کلمات را درست نوشتی. در حال رفتن به مرحله‌ی بعد...";
+        setTimeout(() => finishStage(true), 900);
+      } else {
+        $("typingHint").textContent =
+          "🔎 " + faNum(uniqueMatched.size) + " از " + faNum(total) +
+          " کلمه درست پیدا شد. کادرهای قرمز را اصلاح کن یا دکمه‌ی «نمایش دوباره» را بزن. (ترتیب مهم نیست)";
+      }
+    }
+
+    /* ============================================================
+       REVIEW + FINISH
+       ============================================================ */
+    function showReview() {
+      stopTimer();
+      $("reviewWords").innerHTML = "";
+      state.words.forEach((word, i) => {
+        const el = document.createElement("div");
+        el.className = "result-word";
+        const num = document.createElement("span"); num.textContent = faNum(i + 1) + ".";
+        el.appendChild(num);
+        el.appendChild(document.createTextNode(word));
+        $("reviewWords").appendChild(el);
+      });
+      showScreen("review");
+    }
+
+    function finishStage(allCorrect) {
+      const id = state.currentStage;
+      const previous = !!state.completed[id];
+      const earned = allCorrect ? 10 : 5;
+      if (!previous) {
+        state.points += earned; state.stagePoints[id] = earned; state.completed[id] = true;
+      } else {
+        const old = state.stagePoints[id] || 0;
+        if (earned > old) { state.points += earned - old; state.stagePoints[id] = earned; }
+      }
+      $("feedbackIcon").textContent = allCorrect ? "🌟" : "🛠️";
+      $("feedbackTitle").textContent = allCorrect ? "آفرین، مأمور دقیق!" : "آفرین به تلاش تو!";
+      $("feedbackText").textContent = allCorrect
+        ? "همه‌ی کلمات را درست تایپ کردی. به مأموریت بعدی نزدیک‌تر شدی!"
+        : "اشتباه‌ها بخشی از یادگیری‌اند. با تمرین دوباره قوی‌تر می‌شوی!";
+      $("feedbackPoints").textContent = faNum(state.stagePoints[id] || earned);
+      $("feedbackCompleted").textContent = faNum(Object.keys(state.completed).length);
+      $("feedbackTotal").textContent = faNum(state.points);
+      $("feedbackNext").textContent = id < 4 ? "رفتن به مرحله‌ی بعد 🎯" : "دیدن گزارش نهایی 🏆";
+      buildStageCards();
+      showScreen("feedback");
+    }
+
+    function showReport() {
+      const done = Object.keys(state.completed).length;
+      $("reportGreeting").textContent = (state.name ? state.name + "، " : "") + "این گزارش مأموریت توست.";
+      $("reportStages").textContent = faNum(done) + " از " + faNum(STAGES.length);
+      $("reportScore").textContent = faNum(state.points);
+      $("reportPercent").textContent = faNum(Math.round(done / STAGES.length * 100)) + "٪";
+      const badges = $("reportBadges"); badges.innerHTML = "";
+      STAGES.forEach(s => {
+        if (state.completed[s.id]) {
+          const el = document.createElement("div");
+          el.className = "badge"; el.textContent = s.badge;
+          badges.appendChild(el);
+        }
+      });
+      if (!badges.children.length) {
+        const el = document.createElement("div");
+        el.className = "badge"; el.textContent = "🌱 اولین مأموریتت را شروع کن";
+        badges.appendChild(el);
+      }
+      $("reportMessage").textContent = done === 4
+        ? "تبریک، همه‌ی مرحله‌ها را کامل کردی! با تمرین، حافظه و املایت قوی‌تر می‌شود."
+        : "هر بار تمرین، حافظه‌ات را قوی‌تر می‌کند. " + (4 - done === 4 ? "اولین مرحله منتظر توست." : "هنوز " + faNum(4 - done) + " مرحله برای تکمیل داری.");
+      showScreen("report");
+    }
+
+    function resetAll() {
+      stopTimer();
+      state.currentStage = 0; state.words = []; state.completed = {};
+      state.points = 0; state.stagePoints = {};
+      state.typedAnswers = []; state.checkResults = [];
+      buildStageCards(); showScreen("stages");
+    }
+
+    /* ============================================================
+       EVENT LISTENERS
+       ============================================================ */
+    $("startWelcome").addEventListener("click", () => {
+      startMusicOnce();
+      const name = $("studentName").value.trim();
+      if (!name) { notify("اول نامت را بنویس، مأمور عزیز!"); $("studentName").focus(); return; }
+      state.name = name;
+      $("helloStudent").textContent = "سلام " + name + "، مأمور عزیز! آماده‌ای حافظه‌ات را به چالش بکشی؟";
+      buildStageCards(); showScreen("guide");
+    });
+    $("studentName").addEventListener("keydown", e => { if (e.key === "Enter") $("startWelcome").click(); });
+    $("toStages").addEventListener("click", () => { buildStageCards(); showScreen("stages"); });
+    document.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => showScreen(btn.dataset.go)));
+
+    $("restartDisplay").addEventListener("click", restartDisplay);
+    $("backToStages").addEventListener("click", () => { stopTimer(); buildStageCards(); showScreen("stages"); });
+
+    $("submitTyping").addEventListener("click", submitTyping);
+    $("typingRetry").addEventListener("click", () => {
+      restartDisplay();
+      showScreen("game");
+    });
+    $("typingBackStages").addEventListener("click", () => { stopTimer(); buildStageCards(); showScreen("stages"); });
+
+    $("allCorrect").addEventListener("click", () => finishStage(true));
+    $("hadMistakes").addEventListener("click", () => finishStage(false));
+    $("repeatFromReview").addEventListener("click", () => startStage(state.currentStage));
+    $("reviewBackStages").addEventListener("click", () => { buildStageCards(); showScreen("stages"); });
+
+    $("showReport").addEventListener("click", showReport);
+    $("feedbackNext").addEventListener("click", () => {
+      if (state.currentStage < 4) startStage(state.currentStage + 1);
+      else showReport();
+    });
+    $("feedbackStages").addEventListener("click", () => { buildStageCards(); showScreen("stages"); });
+    $("reportContinue").addEventListener("click", () => { buildStageCards(); showScreen("stages"); });
+    $("restartAll").addEventListener("click", () => {
+      if (confirm("می‌خواهی امتیازها و پیشرفت این بازی پاک شود و از ابتدا شروع کنی؟")) resetAll();
+    });
+
+    window.addEventListener("pagehide", stopTimer);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) stopTimer(); });
+
+    buildStageCards();
+  </script>
+</body>
+</html>
